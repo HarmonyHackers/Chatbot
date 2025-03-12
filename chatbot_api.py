@@ -4,10 +4,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict
 
+
 with open("config.json", "r") as file:
     config = json.load(file)
 
+
 genai.configure(api_key=config["api_key"])
+
 
 generation_config = {
     "temperature": config["temperature"],
@@ -17,36 +20,115 @@ generation_config = {
     "response_mime_type": config["response_mime_type"],
 }
 
+
 model = genai.GenerativeModel(
     model_name=config["model_name"],
     generation_config=generation_config,
 )
 
+
 app = FastAPI()
 
-chat_history = []
+
+predefined_history = [
+    {
+        "role": "user",
+        "parts": [
+            "You are an AI chatbot named 'Aether' that serves as a mindful companion designed to improve mental well-being, foster personal growth, and promote social impact."
+        ],
+    },
+    {
+        "role": "model",
+        "parts": [
+            "Okay, I'm ready. I am Aether, and I'm here to be your mindful companion. It’s a pleasure to connect with you on this journey."
+        ],
+    },
+    {
+        "role": "user",
+        "parts": ["keep it brief"],
+    },
+    {
+        "role": "model",
+        "parts": [
+            "Okay, I understand. I'm Aether, your mindful companion. I'm here to help you find peace, grow, and make a positive impact."
+        ],
+    },
+    {
+        "role": "user",
+        "parts": ["you are not an app guide but a guide to meditation"],
+    },
+    {
+        "role": "model",
+        "parts": [
+            "You are absolutely right. My apologies. Let me rephrase: I am Aether, your guide to meditation."
+        ],
+    },
+    {
+        "role": "user",
+        "parts": [
+            "you have to chat with user, get an assessment of stress, anxiety levels and don't start off the bat with options"
+        ],
+    },
+    {
+        "role": "model",
+        "parts": [
+            "Understood. My apologies for jumping ahead. I'm still learning to be the best mindful companion I can be."
+        ],
+    },
+]
+
+
+chat_history: List[Dict] = predefined_history.copy()
+
+
+MAX_HISTORY = 10
+
+
+def maintain_history(history: List[Dict]) -> List[Dict]:
+    
+    if len(history) > MAX_HISTORY:
+
+        old_messages = history[:-MAX_HISTORY]
+        recent_messages = history[-MAX_HISTORY:]
+        summary_prompt = "Summarize the following conversation concisely, capturing the key points:\n" + "\n".join(
+            f"{msg['role']}: {msg['parts'][0]}" for msg in old_messages
+        )
+
+        summary_response = model.generate_text(summary_prompt)
+        summary_message = {"role": "summary", "parts": [summary_response.text]}
+
+        history = [summary_message] + recent_messages
+    return history
+
 
 class UserMessage(BaseModel):
     message: str
+
 
 @app.post("/send_message")
 async def send_message(user_message: UserMessage):
 
     global chat_history
     chat_history.append({"role": "user", "parts": [user_message.message]})
+    chat_history = maintain_history(chat_history)
+
 
     response = model.start_chat(history=chat_history).send_message(user_message.message)
-
     chat_history.append({"role": "model", "parts": [response.text]})
+    chat_history = maintain_history(chat_history)
 
     return {"response": response.text}
 
+
 @app.get("/chat_history")
 async def get_chat_history():
+
     return {"history": chat_history}
 
+
 @app.delete("/clear_history")
-async def clear_chat_history():
+async def clear_history():
+
     global chat_history
-    chat_history = []
-    return {"message": "Chat history cleared"}
+    chat_history = predefined_history.copy()
+    return {"message": "Chat history reset to default."}
