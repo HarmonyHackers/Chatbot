@@ -87,7 +87,7 @@ def maintain_history(history: List[Dict]) -> List[Dict]:
         )
         try:
             # Use the top-level function from the library instead of a model method
-            summary_response = genai.generate_text(summary_prompt)
+            summary_response = genai.generate_text(prompt=summary_prompt)
             summary_message = {"role": "summary", "parts": [summary_response.text]}
             history = [summary_message] + recent_messages
         except Exception as e:
