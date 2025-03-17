@@ -11,12 +11,12 @@ with open("config.json", "r") as file:
 # Configure Google AI model
 genai.configure(api_key=config["api_key"])
 
+# Updated generation_config (removed response_mime_type)
 generation_config = {
     "temperature": config["temperature"],
     "top_p": config["top_p"],
     "top_k": config["top_k"],
     "max_output_tokens": config["max_output_tokens"],
-    "response_mime_type": config["response_mime_type"],
 }
 
 model = genai.GenerativeModel(
@@ -65,7 +65,7 @@ predefined_history = [
     {
         "role": "user",
         "parts": [
-            "you have to chat with user, get an assessment of stress, anxiety levels and don't start off the bat with options"
+            "you have to chat with the user, get an assessment of stress, anxiety levels and don't start off the bat with options"
         ],
     },
     {
@@ -88,7 +88,7 @@ def maintain_history(history: List[Dict]) -> List[Dict]:
             f"{msg['role']}: {msg['parts'][0]}" for msg in old_messages
         )
         try:
-            summary_response = model.generate_content(summary_prompt)
+            summary_response = model.generate_text(summary_prompt)
             summary_message = {"role": "summary", "parts": [summary_response.text]}
             history = [summary_message] + recent_messages
         except Exception as e:
@@ -125,3 +125,11 @@ async def clear_history():
     chat_history = predefined_history.copy()
     chat = model.start_chat()  # Reset chat session
     return {"message": "Chat history reset to default."}
+
+@app.get("/")
+async def root():
+    return {"message": "Chatbot API is running!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
