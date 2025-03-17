@@ -11,7 +11,6 @@ with open("config.json", "r") as file:
 # Configure Google AI model
 genai.configure(api_key=config["api_key"])
 
-# Updated generation_config (removed response_mime_type)
 generation_config = {
     "temperature": config["temperature"],
     "top_p": config["top_p"],
@@ -77,7 +76,6 @@ predefined_history = [
 ]
 
 chat_history: List[Dict] = predefined_history.copy()
-
 MAX_HISTORY = 10
 
 def maintain_history(history: List[Dict]) -> List[Dict]:
@@ -88,7 +86,8 @@ def maintain_history(history: List[Dict]) -> List[Dict]:
             f"{msg['role']}: {msg['parts'][0]}" for msg in old_messages
         )
         try:
-            summary_response = model.generate_text(summary_prompt)
+            # Use generate() instead of generate_text()
+            summary_response = model.generate(summary_prompt)
             summary_message = {"role": "summary", "parts": [summary_response.text]}
             history = [summary_message] + recent_messages
         except Exception as e:
