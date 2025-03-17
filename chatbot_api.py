@@ -4,11 +4,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict
 
-# Load configuration
 with open("config.json", "r") as file:
     config = json.load(file)
 
-# Configure Google AI model
 genai.configure(api_key=config["api_key"])
 
 generation_config = {
@@ -25,7 +23,6 @@ model = genai.GenerativeModel(
 
 app = FastAPI()
 
-# Initialize Chat Object
 chat = model.start_chat()
 
 predefined_history = [
@@ -76,25 +73,23 @@ predefined_history = [
 ]
 
 chat_history: List[Dict] = predefined_history.copy()
+
 MAX_HISTORY = 10
 
 def maintain_history(history: List[Dict]) -> List[Dict]:
-    if len(history) > MAX_HISTORY:
-        old_messages = history[:-MAX_HISTORY]
-        recent_messages = history[-MAX_HISTORY:]
-        summary_prompt = "Summarize the following conversation concisely, capturing the key points:\n" + "\n".join(
-            f"{msg['role']}: {msg['parts'][0]}" for msg in old_messages
-        )
-        try:
-            # Use the top-level function from the library instead of a model method
-            summary_response = genai.generate_text(prompt=summary_prompt)
-            summary_message = {"role": "summary", "parts": [summary_response.text]}
-            history = [summary_message] + recent_messages
-        except Exception as e:
-            print(f"Error summarizing history: {e}")
-            history = recent_messages  # If summarization fails, keep recent messages
-    return history
+    """
+    Keep the permanent predefined history intact.
+    Then, from any additional messages appended during the session,
+    only retain the most recent MAX_HISTORY messages.
+    """
 
+    permanent_count = len(predefined_history)
+
+    session_messages = history[permanent_count:]
+
+    if len(session_messages) > MAX_HISTORY:
+        session_messages = session_messages[-MAX_HISTORY:]
+    return predefined_history + session_messages
 
 class UserMessage(BaseModel):
     message: str
@@ -122,8 +117,9 @@ async def get_chat_history():
 @app.delete("/clear_history")
 async def clear_history():
     global chat_history, chat
+
     chat_history = predefined_history.copy()
-    chat = model.start_chat()  # Reset chat session
+    chat = model.start_chat()
     return {"message": "Chat history reset to default."}
 
 @app.get("/")
