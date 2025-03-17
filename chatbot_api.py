@@ -43,7 +43,7 @@ predefined_history = [
     },
     {
         "role": "user",
-        "parts": ["keep it brief"],
+        "parts": ["keep your output brief "],
     },
     {
         "role": "model",
