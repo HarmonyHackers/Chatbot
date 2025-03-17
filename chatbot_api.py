@@ -86,14 +86,15 @@ def maintain_history(history: List[Dict]) -> List[Dict]:
             f"{msg['role']}: {msg['parts'][0]}" for msg in old_messages
         )
         try:
-            # Use generate() instead of generate_text()
-            summary_response = model.generate(summary_prompt)
+            # Use the top-level function from the library instead of a model method
+            summary_response = genai.generate_text(summary_prompt)
             summary_message = {"role": "summary", "parts": [summary_response.text]}
             history = [summary_message] + recent_messages
         except Exception as e:
             print(f"Error summarizing history: {e}")
             history = recent_messages  # If summarization fails, keep recent messages
     return history
+
 
 class UserMessage(BaseModel):
     message: str
