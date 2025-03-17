@@ -4,13 +4,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict
 
-
+# Load configuration
 with open("config.json", "r") as file:
     config = json.load(file)
 
-
+# Configure Google AI model
 genai.configure(api_key=config["api_key"])
-
 
 generation_config = {
     "temperature": config["temperature"],
@@ -20,15 +19,15 @@ generation_config = {
     "response_mime_type": config["response_mime_type"],
 }
 
-
 model = genai.GenerativeModel(
     model_name=config["model_name"],
     generation_config=generation_config,
 )
 
-
 app = FastAPI()
 
+# Initialize Chat Object
+chat = model.start_chat()
 
 predefined_history = [
     {
@@ -77,58 +76,52 @@ predefined_history = [
     },
 ]
 
-
 chat_history: List[Dict] = predefined_history.copy()
-
 
 MAX_HISTORY = 10
 
-
 def maintain_history(history: List[Dict]) -> List[Dict]:
-    
     if len(history) > MAX_HISTORY:
-
         old_messages = history[:-MAX_HISTORY]
         recent_messages = history[-MAX_HISTORY:]
         summary_prompt = "Summarize the following conversation concisely, capturing the key points:\n" + "\n".join(
             f"{msg['role']}: {msg['parts'][0]}" for msg in old_messages
         )
-
-        summary_response = model.generate_text(summary_prompt)
-        summary_message = {"role": "summary", "parts": [summary_response.text]}
-
-        history = [summary_message] + recent_messages
+        try:
+            summary_response = model.generate_content(summary_prompt)
+            summary_message = {"role": "summary", "parts": [summary_response.text]}
+            history = [summary_message] + recent_messages
+        except Exception as e:
+            print(f"Error summarizing history: {e}")
+            history = recent_messages  # If summarization fails, keep recent messages
     return history
-
 
 class UserMessage(BaseModel):
     message: str
 
-
 @app.post("/send_message")
 async def send_message(user_message: UserMessage):
+    global chat_history, chat
 
-    global chat_history
     chat_history.append({"role": "user", "parts": [user_message.message]})
     chat_history = maintain_history(chat_history)
 
-
-    response = model.start_chat(history=chat_history).send_message(user_message.message)
-    chat_history.append({"role": "model", "parts": [response.text]})
-    chat_history = maintain_history(chat_history)
-
-    return {"response": response.text}
-
+    try:
+        response = chat.send_message(user_message.message)
+        chat_history.append({"role": "model", "parts": [response.text]})
+        chat_history = maintain_history(chat_history)
+        return {"response": response.text}
+    except Exception as e:
+        print(f"Error generating response: {e}")
+        return {"error": "Internal Server Error"}, 500
 
 @app.get("/chat_history")
 async def get_chat_history():
-
     return {"history": chat_history}
-
 
 @app.delete("/clear_history")
 async def clear_history():
-
-    global chat_history
+    global chat_history, chat
     chat_history = predefined_history.copy()
+    chat = model.start_chat()  # Reset chat session
     return {"message": "Chat history reset to default."}
