@@ -77,11 +77,7 @@ chat_history: List[Dict] = predefined_history.copy()
 MAX_HISTORY = 10
 
 def maintain_history(history: List[Dict]) -> List[Dict]:
-    """
-    Keep the permanent predefined history intact.
-    Then, from any additional messages appended during the session,
-    only retain the most recent MAX_HISTORY messages.
-    """
+
 
     permanent_count = len(predefined_history)
 
