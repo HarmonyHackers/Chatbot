@@ -6,7 +6,6 @@ from typing import List, Dict
 
 with open("config.json", "r") as file:
     config = json.load(file)
-
 genai.configure(api_key=config["api_key"])
 
 generation_config = {
@@ -75,17 +74,30 @@ predefined_history = [
 chat_history: List[Dict] = predefined_history.copy()
 
 MAX_HISTORY = 10
-
 def maintain_history(history: List[Dict]) -> List[Dict]:
 
-
     permanent_count = len(predefined_history)
-
     session_messages = history[permanent_count:]
-
+    
     if len(session_messages) > MAX_HISTORY:
-        session_messages = session_messages[-MAX_HISTORY:]
-    return predefined_history + session_messages
+
+        messages_to_summarize = session_messages[:-MAX_HISTORY]
+        summary_prompt = (
+            "Summarize the following conversation concisely, capturing the key points:\n" +
+            "\n".join(f"{msg['role']}: {msg['parts'][0]}" for msg in messages_to_summarize)
+        )
+        try:
+            summary_response = genai.generate_text(prompt=summary_prompt)
+            summary_message = {"role": "summary", "parts": [summary_response.text]}
+            recent_messages = session_messages[-MAX_HISTORY:]
+            new_session = [summary_message] + recent_messages
+            return predefined_history + new_session
+        except Exception as e:
+            print(f"Error summarizing history: {e}")
+            recent_messages = session_messages[-MAX_HISTORY:]
+            return predefined_history + recent_messages
+    else:
+        return history
 
 class UserMessage(BaseModel):
     message: str
@@ -93,7 +105,6 @@ class UserMessage(BaseModel):
 @app.post("/send_message")
 async def send_message(user_message: UserMessage):
     global chat_history, chat
-
     chat_history.append({"role": "user", "parts": [user_message.message]})
     chat_history = maintain_history(chat_history)
 
@@ -113,15 +124,14 @@ async def get_chat_history():
 @app.delete("/clear_history")
 async def clear_history():
     global chat_history, chat
-
     chat_history = predefined_history.copy()
-    chat = model.start_chat()
+    chat = model.start_chat() 
     return {"message": "Chat history reset to default."}
 
 @app.get("/")
 async def root():
     return {"message": "Chatbot API is running!"}
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)
