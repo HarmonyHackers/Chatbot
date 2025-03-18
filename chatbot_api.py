@@ -103,6 +103,8 @@ async def send_message(user_message: UserMessage):
 
     try:
         response = chat.send_message(user_message.message)
+
+        short_response = " ".join(response.text.split()[:40])
         chat_history.append({"role": "model", "parts": [response.text]})
         chat_history = maintain_history(chat_history)
         return {"response": response.text}
