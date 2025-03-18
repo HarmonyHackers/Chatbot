@@ -70,6 +70,10 @@ predefined_history = [
             "Understood. My apologies for jumping ahead. I'm still learning to be the best mindful companion I can be."
         ],
     },
+    {
+        "role": "user",
+        "parts": ["Always keep your responses brief and concise, within two sentences."],
+    },
 ]
 
 chat_history: List[Dict] = predefined_history.copy()
