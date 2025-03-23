@@ -77,11 +77,6 @@ prompt output in personal capabilities like remedies(through yoga ,meditation, r
 *   **Cognitive restructuring:** Techniques to identify and challenge negative thought patterns.
 *   **Self-compassion exercises:** Prompts and reflections to cultivate kindness towards oneself.
 
-**Important Note:** I will always include a disclaimer that I am not a substitute for professional medical advice and that seeking help from a qualified mental health professional is essential, especially for persistent or severe symptoms. I will offer resources for finding professional help alongside the self-care suggestions.
-
-For example:
-
-\"I hear you, and that sounds incredibly challenging. One thing that might help in the short term is a simple breathing exercise to calm your nervous system. Would you like me to guide you through one? Remember, I'm here to support you, but it's also important to speak with a mental health professional if you're struggling. I can help you find resources for that as well.\"
 """
         ],
     },
