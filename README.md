@@ -1,8 +1,4 @@
-Now I have everything I need. Here's your copy-paste README:
 
----
-
-```markdown
 # 🌿 Aether — Mindful AI Companion Chatbot
 
 Aether is an AI-powered chatbot built by **HarmonyHackers**, designed to support mental well-being, foster personal growth, and promote social impact. It uses Google's **Gemini 2.0 Flash** model via a **FastAPI** backend to deliver brief, empathetic, and actionable responses.
@@ -160,6 +156,3 @@ Built with 💚 by **HarmonyHackers**
 This project is licensed under the [MIT License](LICENSE).
 ```
 
----
-
-Just replace the team member names under the **Team** section if you'd like to credit individuals, and make sure `config.json` is added to your `.gitignore` to protect your API key!
